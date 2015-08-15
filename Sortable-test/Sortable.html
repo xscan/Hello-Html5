@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<title>拖动</title>
+	<script src="Sortable.min.js"></script>
+	<style>
+	*{
+		margin: 0;
+		padding: 0;
+	}
+	body{
+		font-size: 20px;
+	}
+	ul li{
+		list-style: none;
+	}
+	li{
+		padding: 10px 40px;
+		background: #f6f6f6 url() 0 0 no-repeat;
+		/*border: solid 1px #111;*/
+		border-left: solid 5px #aaa;
+		text-shadow: 5px 5px 5px #888888;
+	}
+	#my-ui-list li {
+		position: relative;
+	}	
+	#my-ui-list i {
+		-webkit-transition: opacity .2s;
+		transition: opacity .2s;
+		opacity: 0;
+		display: block;
+		cursor: pointer;
+		color: #c00;
+		top: 10px;
+		right: 40px;
+		position: absolute;
+		font-style: normal;
+	}
+	#my-ui-list li:hover i {
+		opacity: 1;
+	}
+	input{
+		border:#ccc solid 2px #aaa;
+		border-width:0px 0px 2px 0px;
+		line-height: 30px;
+		font-size: 20px;
+
+	}
+	input:focus{
+		text-shadow: 1px 1px 1px #ccc;
+	}
+	.block{
+		width: 100%;
+	}
+	</style>
+</head>
+<body>
+	<input type="text" id="text" class="block" placeholder="请输入添加内容,按回车添加">	
+	<ul id="my-ui-list" class="box">
+		<li class="list" contenteditable >1<i class="js-remove">✖</i></li>
+		<li class="list" contenteditable >2<i class="js-remove">✖</i></li>
+		<li class="list" contenteditable >3<i class="js-remove">✖</i></li>
+		<li class="list" contenteditable >4<i class="js-remove">✖</i></li>
+		<li class="list" contenteditable >5<i class="js-remove">✖</i></li>
+		<li class="list" contenteditable >6<i class="js-remove">✖</i></li>
+	</ul>
+</body>
+<script>
+	var list = document.getElementById("my-ui-list");
+	var addUser=document.getElementById('addUser');
+	var text=document.getElementById('text');
+
+	var editableList = Sortable.create(list, {
+		animation: 150,
+		filter: '.js-remove',
+		onFilter: function (evt) {
+			 evt.item.parentNode.removeChild(evt.item);
+		}
+	});
+
+	text.onkeydown = function (ui) {
+			if(event.keyCode==13 && text.value!==''){
+				var el = document.createElement('li');
+				el.attribute="contenteditable='true'";
+				el.setAttribute("contenteditable", "true");
+				el.innerHTML = text.value + '<i class="js-remove">✖</i>';
+				editableList.el.appendChild(el);
+				text.value='';
+			}
+
+	};
+</script>
+
+</html>

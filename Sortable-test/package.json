@@ -1,0 +1,19 @@
+{
+
+  "name": "HelloWorld",
+
+  // "main": "index.html",
+
+  "main":"Sortable",
+  
+  "window": {
+
+    "toolbar": false,
+
+    "width": 660,
+
+    "height": 500
+
+  }
+
+}
