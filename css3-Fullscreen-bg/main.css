@@ -1,0 +1,39 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+#content{
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	position: absolute;
+	border:1px solid #ccc;
+}
+ul,li{
+	list-style: none;
+}
+.content-wrap{
+	position: relative;
+}
+.content-wrap > li{
+        width: 100%;
+        height: 100%;
+        background: #CAE1FF;
+        color: red;
+        float: left;
+        overflow: hidden;
+        position: relative;
+}
+li:nth-child(1){
+	background: #9BCD9B;
+}
+li:nth-child(2){
+ 	background: yellow;
+}
+
+button{
+	position: absolute;
+	bottom: 0;
+	width:100px;
+	height: 40px;
+}
