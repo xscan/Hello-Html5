@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>雪碧图切割</title>
+<style>
+	.boy{
+		position: absolute;
+        width: 151px;
+        height: 291px;
+		background: #fff url(http://img.mukewang.com/55ade248000198ae10550582.png) -0px -0px no-repeat;
+	}
+	.one{
+		position: absolute;
+		left: 300px;
+		width: 151px;
+        height: 291px;
+        background: #000;
+		background: #fff url(http://img.mukewang.com/55ade248000198ae10550582.png) -0px -291px no-repeat;
+	}
+	.one:hover{
+	 background-position: -602px -0px;
+	}
+    .charector {
+        position: absolute;
+        left: 6%;
+        top: 55%;
+        width: 151px;
+        height: 291px;
+        background: url(http://img.mukewang.com/55ade248000198ae10550582.png) -302px -291px; no-repeat;
+    }
+    .slowWalk {
+         /* 填入动画样式规则 */
+          -webkit-animation-name: person-slow; 
+    /*规定动画完成一个周期所花费的秒或毫秒。默认是 0*/
+    -webkit-animation-duration: 950ms;
+    /*规定动画被播放的次数。默认是 1。 infinite(循环播放)*/
+    -webkit-animation-iteration-count: infinite;
+    /*动画切换的方式是一帧一帧的改变*/
+    -webkit-animation-timing-function: steps(1, start);
+
+    -moz-animation-name: person-slow;
+    -moz-animation-duration: 950ms;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-timing-function: steps(1, start)
+    }
+    
+    /* 普通慢走 */
+    
+    @-webkit-keyframes person-slow {
+        0% {
+            background-position: -0px -291px;
+        }
+        25% {
+            background-position: -602px -0px;
+        }
+        50% {
+            background-position: -302px -291px;
+        }
+        75% {
+            background-position: -151px -291px;
+        }
+        100% {
+            background-position: -0px -291px;
+        }
+    }
+    
+    @-moz-keyframes person-slow {
+        0% {
+            background-position: -0px -291px;
+        }
+        25% {
+            background-position: -602px -0px;
+        }
+        50% {
+            background-position: -302px -291px;
+        }
+        75% {
+            background-position: -151px -291px;
+        }
+        100% {
+            background-position: -0px -291px;
+        }
+      }
+</style>
+</head>
+
+<body>
+	<div class="boy"></div>
+	<div class="one"></div>
+	<div class="charector slowWalk"></div>
+</body>
+</html>

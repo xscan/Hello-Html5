@@ -4,7 +4,9 @@
 	<meta charset="UTF-8">
 	<title>全屏</title>
 	<link rel="stylesheet" href="main.css">
+
 	<script src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+	<script src="swipe.js"></script>
 </head>
 <body>
 	 <div id='content'>
@@ -18,39 +20,15 @@
         </ul>
     </div>
     
-    <button>点击启动动画</button>
+    <button id='start'>点击启动动画</button>
 </body>
 <script>
-//获取
-var container=$('#content');
 
-var element=container.find(':first');
+	var swipe= Swipe($('#content'));
+	var id=1;
+	$('#start').click(function(){
+		swipe.scrollTo($("#content").width() * 2, 2500);
 
-var slides=element.find('li');
-
-var width=container.width();
-var height=container.height();
-
-element.css({
-	width: (slides.length*width)+'px',
-	height: height+'px'
-})
-$.each(slides,function(index){
-	var slide=slides.eq(index);
-	slide.css({
-		width: width+'px',
-		height:height+'px'
 	})
-});
-var id=1;
-$('button').click(function(){
-	element.css({
-		'transition-timing-function': 'linear',
-	   	'transition-duration': '500ms',
-	    'transform': 'translate3d(-' + (width*id) + 'px,0px,0px)'
-	})
-	id+=1;
-})
-
 </script>
 </html>

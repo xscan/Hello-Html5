@@ -23,17 +23,43 @@ ul,li{
         float: left;
         overflow: hidden;
         position: relative;
-}
-li:nth-child(1){
-	background: #9BCD9B;
-}
-li:nth-child(2){
- 	background: yellow;
+     	-webkit-background-size: cover;
+		background-size: cover;
 }
 
-button{
+li:nth-child(1){
+	 background: #9BCD9B;
+	 /*以下是图片的，需要使用只需把注释打开*/
+/*	 background: url(./pic01.jpg) no-repeat;
+	-webkit-background-size: cover;
+	background-size: cover;
+	background-position: center center;*/
+}
+li:nth-child(2){
+	 background: #9BCD1B;
+/*	 background: url(./pic02.jpg) no-repeat;
+	-webkit-background-size: cover;
+	background-size: cover;
+	background-position: center center;*/
+}
+li:nth-child(3){
+ 	 background: yellow;
+/* 	 background: url(./pic03.jpg) no-repeat;
+	-webkit-background-size: cover;
+	background-size: cover;
+	background-position: center center;*/
+}
+
+#start{
 	position: absolute;
 	bottom: 0;
+	width:100px;
+	height: 40px;
+}
+#restart{
+	position: absolute;
+	bottom: 0;
+	right:0;
 	width:100px;
 	height: 40px;
 }
