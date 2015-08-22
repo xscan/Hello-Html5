@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>HTML5 File ApI</title>
+</head>
+<body>
+	<input id="file" type="file" onchange="getfile(this.files)"></div>
+	<div id="filecontent"></div>
+</body>
+<script>
+	function getfile(files){
+		if(files.length){
+	       var file = files[0];
+           var reader = new FileReader();
+           reader.onload = function()
+           {
+               document.getElementById("filecontent").innerHTML = "<img src='"+this.result+"' width='300px'>"
+           };
+           reader.readAsDataURL(file);
+			console.log(files);
+		}
+	}
+</script>
+</html>

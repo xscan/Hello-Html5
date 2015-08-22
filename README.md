@@ -9,3 +9,5 @@
 ###4.JsTpl Js-Tpl引擎例子
 
 ###5.css3-bnground-position 雪碧图动画例子
+
+###6.dorpupload HTML5 FILE API例子和HTML5拖动上传图片
