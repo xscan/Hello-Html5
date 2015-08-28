@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>拖动上传</title>
+	<style>
+	*{
+		margin: 0;
+		padding:0;
+	}
+	#dropbox{
+		max-width: 50%;
+		min-height: 300px;
+		margin: 0 auto;
+		border:2px solid #000;
+		text-align: center;
+	}
+	.img{
+		width:20%;
+		display: inline-block;
+		z-index: 1;
+	}
+	img{
+		width:100%;
+		/*display: inline-block;*/
+		margin: 0px;
+	}
+	#uploadlog{
+		width: 20%;
+		height: 300px;
+		border:2px solid #000;
+		text-align: left;
+		position: absolute;
+		right: 0;
+		top:0px;
+	}
+	.loader{
+		border-top: 3px solid green;
+		box-shadow: 1px 1px 10px green;
+		width:0%;
+		position: fixed;
+		top: 0px;
+	}
+	</style>
+</head>
+<body>
+	<div class="loader" id="loader"></div>
+	 <div id="dropbox">
+	<!--  	<div class="demo" data="sdf" wid="50%"><img src="1.jpg" alt=''></div>
+	   <img src="1.jpg" class="img" alt='' data="sdf"> -->
+	</div>
+	 <div id="uploadlog"></div> 
+</body>
+<script>
+	 var uploadlog = document.getElementById("uploadlog");
+	 //获取拖入容器
+	 var dropbox = document.getElementById("dropbox"); 
+	 // 拖拽进入目标对象时触发
+	 dropbox.addEventListener('dragenter',dragenter,false);
+	 // 拖拽在目标对象上时触发
+	 dropbox.addEventListener('dragover',dragover,false);
+	 // 拖拽结束时触发
+	 dropbox.addEventListener('drop',drop,false);
+
+	 function dragenter(event) { 
+	     this.style.borderStyle = "dashed";
+		 event.stopPropagation(); 
+		 event.preventDefault(); 
+	
+	 }; 
+	 
+	function dragover(event) { 
+		 event.stopPropagation(); 
+		 event.preventDefault();
+		  // this.style.borderStyle = "solid"; 
+	}; 
+
+	function drop(event){
+		   event.stopPropagation();
+           event.preventDefault();
+           document.getElementById('loader').style.width='0%';
+           this.style.borderStyle = "solid";
+		   var file=event.dataTransfer.files;
+
+		   for(var i=0;i<file.length;i++){
+		   	   if(!isFileType(file[i].type)){
+		   	   	  console.log(file[i].name+'类型不匹配');
+		   	   	  return false;
+		   	   }
+			   var reader=new FileReader();//实例化File API
+			   reader.onload=function(){
+			  		createImgEle(this.result,dropbox);
+			   }
+		  	  reader.readAsDataURL(file[i]);//读取文件
+		  	  upload(file[i]);//上传,填写上传路径才打开注释，要不然一次只能读一个文件
+		   
+			  // console.log(file[i])// 查看文件信息
+		   }
+		   
+	};
+	function isFileType(filetypelsit){
+			var isMate;
+			isMate=true;
+			if(filetypelsit.search(/image/)==-1){
+				isMate=false;
+			}
+			return isMate;
+	}
+	function createImgEle(imgsrc,appendEle){
+ 		 var img = document.createElement("img");
+	   	 	 img.src=imgsrc;
+	   	 	 img.className="img";
+	   		 appendEle.appendChild(img);
+
+	}
+	function upload(Filename){
+		var xhr = new XMLHttpRequest();  
+		//第一个为提交方式
+		//第二个为上传的接口URL
+        xhr.open("POST", "test.php", true);  
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest', 'Content-Type', 'multipart/form-data;');  
+         var FData = new FormData(); //新建一个表单容器
+        FData.append('xfile',Filename); //向表单容器添加一个name=image的对象
+        xhr.addEventListener("load", function(e){
+        	console.log('上传 '+Filename.name+" 文件成功");
+        })
+		xhr.upload.addEventListener("progress", function(e){
+				if(e.lengthComputable){
+					var loaded = Math.ceil((e.loaded / e.total) * 100);
+					var percent=(e.loaded / e.total * 100|0)+'%';
+					document.getElementById('loader').style.width=percent;
+					var li = document.createElement("p");
+				   	 	 li.innerHTML=Filename.name+percent;
+				   		 uploadlog.appendChild(li);
+				}
+			}, false);
+        xhr.send(FData); //上传
+	}
+	function Free(child){
+		child.parentNode.removeChild(child);
+	}
+</script>
+</html>
