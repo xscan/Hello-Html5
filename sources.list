@@ -1,0 +1,2 @@
+deb http://mirror.sysu.edu.cn/raspbian/raspbian/ wheezy main contrib non-free
+deb-src http://mirror.sysu.edu.cn/raspbian/raspbian/ wheezy main contrib non-free
