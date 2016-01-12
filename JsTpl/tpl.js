@@ -20,6 +20,7 @@ var data = {
 var result = tpl.replace(/<%([^%>]+)?%>/g, function(s0, s1){
     return data[s1];
 })
+
 for (var i = 5; i >= 0; i--) {
 	document.write(result)
 };
