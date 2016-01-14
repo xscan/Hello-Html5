@@ -1,0 +1,1610 @@
+impress.js 中文注释
+
+/**
+
+ * impress.js
+
+ *（本翻译并未完全遵照原作者的注释翻译）
+
+ * Impress.js 是受 Prezi启发，基于现代浏览器的 CSS3 与 JavaScript
+
+ *语言完成的一个可供开发者使用的表现层框架.
+
+ *
+
+ *
+
+ * Copyright 2011-2012 Bartek Szopka (@bartaz)
+
+ *
+
+ * Released under the MIT and GPL Licenses.
+
+ *
+
+ * ------------------------------------------------
+
+ *  作者:  Bartek Szopka
+
+ *  版本: 0.5.3
+
+ *  url:     http://bartaz.github.com/impress.js/
+
+ *  源码:  http://github.com/bartaz/impress.js/
+
+ */
+
+ 
+
+/*jshint bitwise:true, curly:true, eqeqeq:true, forin:true, latedef:true, newcap:true,
+
+         noarg:true, noempty:true, undef:true, strict:true, browser:true */
+
+ 
+
+// 想知道impress.js内部工作原理吗?
+
+// 现在从使impress.js开始运转的齿轮开始为您介绍...
+
+(function (document, window) {
+
+    'use strict';
+
+ 
+
+    // 辅助函数
+
+ 
+
+    // `pfx` 是一个采用标准的CSS3属性为参数，返回其在当前浏览器是否被支持的信息。
+
+    // 代码参考了Modernizr http://www.modernizr.com/
+
+    var pfx = (function () {
+
+ 
+
+        var style = document.createElement('dummy').style,
+
+            prefixes = 'Webkit Moz O ms Khtml'.split(' '),
+
+            memory = {};
+
+ 
+
+        returnfunction (prop) {
+
+            if (typeof memory[prop] === "undefined") {
+
+ 
+
+                var ucProp = prop.charAt(0).toUpperCase() + prop.substr(1),
+
+                    props = (prop + ' ' + prefixes.join(ucProp + ' ') + ucProp).split(' ');
+
+ 
+
+                memory[prop] = null;
+
+                for (var i in props) {
+
+                    if (style[props[i]] !== undefined) {
+
+                        memory[prop] = props[i];
+
+                        break;
+
+                    }
+
+                }
+
+ 
+
+            }
+
+ 
+
+            return memory[prop];
+
+        };
+
+ 
+
+    })();
+
+ 
+
+    // `arraify` 接收一个类似数组的参数，然后将它放入真正的数组，
+
+    // 以使所有的数组属性完整有效。
+
+    var arrayify = function (a) {
+
+        return [].slice.call(a);
+
+    };
+
+ 
+
+    // `css` 函数提供以下功能：
+
+    //将 `props` 对象中的样式添加到元素‘el’中。
+
+    // 通过 `pfx` 函数确保样式的每一个属性可用。
+
+    // sure proper prefixed version of the property is used.
+
+    var css = function (el, props) {
+
+        var key, pkey;
+
+        for (key in props) {
+
+            if (props.hasOwnProperty(key)) {
+
+                pkey = pfx(key);
+
+                if (pkey !== null) {
+
+                    el.style[pkey] = props[key];
+
+                }
+
+            }
+
+        }
+
+        return el;
+
+    };
+
+ 
+
+    // `toNumber` 函数提供类型强制转换功能，将传入参数转换为数值类型。
+
+    // 如果转换失败，返回0 (或者自定义的
+
+    //  `fallback`回调函数).
+
+    var toNumber = function (numeric, fallback) {
+
+        return isNaN(numeric) ? (fallback || 0) : Number(numeric);
+
+    };
+
+ 
+
+    // `byId` 返回给定`id`的元素 - 你懂得 ;)
+
+    var byId = function (id) {
+
+        return document.getElementById(id);
+
+    };
+
+ 
+
+    // `$` 通过给定的 CSS选择器（`selector`）返回在
+
+    //上下文（`context`，指定元素或者整个文档）中
+
+    //第一个匹配的元素
+
+    var $ = function (selector, context) {
+
+        context = context || document;
+
+        return context.querySelector(selector);
+
+    };
+
+ 
+
+    // `$$`通过给定的 CSS选择器（`selector`）返回在
+
+    //上下文（`context`，指定元素或者整个文档）中
+
+    //匹配的元素数组
+
+    var $$ = function (selector, context) {
+
+        context = context || document;
+
+        return arrayify(context.querySelectorAll(selector));
+
+    };
+
+ 
+
+    // `triggerEvent` 为指定元素构建事件
+
+    // 该函数有三个参数：
+
+    // el:目标元素
+
+    // eventName:事件名称
+
+    //detail:传入数据
+
+ 
+
+    var triggerEvent = function (el, eventName, detail) {
+
+        var event = document.createEvent("CustomEvent");
+
+        event.initCustomEvent(eventName, true, true, detail);
+
+        el.dispatchEvent(event);
+
+    };
+
+ 
+
+    // `translate` 根据给定参数构建平移变换调用字符串.
+
+    var translate = function (t) {
+
+        return" translate3d(" + t.x + "px," + t.y + "px," + t.z + "px) ";
+
+    };
+
+ 
+
+    // `rotate` 根据给定参数构建旋转变换调用字符串..
+
+    // 默认情况下，旋转按照x，y，z轴顺序进行，
+
+    // 可以通过设置第二个参数‘revert’来改变旋转顺序
+
+    var rotate = function (r, revert) {
+
+        var rX = " rotateX(" + r.x + "deg) ",
+
+            rY = " rotateY(" + r.y + "deg) ",
+
+            rZ = " rotateZ(" + r.z + "deg) ";
+
+ 
+
+        return revert ? rZ + rY + rX : rX + rY + rZ;
+
+    };
+
+ 
+
+    // `scale` 根据给定参数构建缩放变换调用字符串
+
+    var scale = function (s) {
+
+        return" scale(" + s + ") ";
+
+    };
+
+ 
+
+    // `perspective` 根据给定参数构建透视变换调用字符串.
+
+    var perspective = function (p) {
+
+        return" perspective(" + p + "px) ";
+
+    };
+
+ 
+
+    // `getElementFromHash`
+
+    //  以ID为key，从window location中取得数据
+
+    var getElementFromHash = function () {
+
+        // 从url中取得id，通过删除开头的 `#` 或者 `#/`
+
+        // 所以 "fallback" `#slide-id` 和 "enhanced" `#/slide-id` 都合乎规范
+
+        return byId(window.location.hash.replace(/^#\/?/, ""));
+
+    };
+
+ 
+
+    // `computeWindowScale` 通过定义在config文件中的 window size 和 size，
+
+    //计算实际的缩放效果，
+
+    var computeWindowScale = function (config) {
+
+        var hScale = window.innerHeight / config.height,
+
+            wScale = window.innerWidth / config.width,
+
+            scale = hScale > wScale ? wScale : hScale;
+
+ 
+
+        if (config.maxScale && scale > config.maxScale) {
+
+            scale = config.maxScale;
+
+        }
+
+ 
+
+        if (config.minScale && scale < config.minScale) {
+
+            scale = config.minScale;
+
+        }
+
+ 
+
+        return scale;
+
+    };
+
+ 
+
+    // 校验支持性
+
+    var body = document.body;
+
+ 
+
+    var ua = navigator.userAgent.toLowerCase();
+
+    var impressSupported =
+
+                          // 浏览器应该支持 CSS 3D 变换、classList和 dataset APIs
+
+                           (pfx("perspective") !== null) &&
+
+ 
+
+ 
+
+                           (body.classList) &&
+
+                           (body.dataset) &&
+
+ 
+
+                          // 但是一些移动设备得上黑名单了,
+
+                          // 因为他们对CSS 3D的支持和硬件特性不足以运行impress.js
+
+                          //  sorry...
+
+                           (ua.search(/(iphone)|(ipod)|(android)/) === -1);
+
+ 
+
+    if (!impressSupported) {
+
+        // 无法确定 `classList` 是否被支持
+
+        body.className += " impress-not-supported ";
+
+    } else {
+
+        body.classList.remove("impress-not-supported");
+
+        body.classList.add("impress-supported");
+
+    }
+
+ 
+
+    // 全局变量和默认值
+
+ 
+
+    // root元素，所有impress.js实例都必须保持并维护.
+
+    // 是的！在一个页面里我们可以拥有多个实例，但是
+
+    // 我不知道多个实例的意义在哪里;)
+
+    var roots = {};
+
+ 
+
+    // 默认配置.
+
+    var defaults = {
+
+        width: 1024,
+
+        height: 768,
+
+        maxScale: 1,
+
+        minScale: 0,
+
+ 
+
+        perspective: 1000,
+
+ 
+
+        transitionDuration: 1000
+
+    };
+
+ 
+
+    // 仅仅是一个空方法 ... 好吧，这个注释也很无聊^_^.
+
+    var empty = function () { returnfalse; };
+
+ 
+
+    // IMPRESS.JS API
+
+ 
+
+    // 你感兴趣的地方，才刚刚开始.
+
+    //  `impress` function 是整个impress组件的核心，它返回一个指定id的对象，默认为
+
+    //该对象包含所有impress API 接口。
+
+    //
+
+    var impress = window.impress = function (rootId) {
+
+ 
+
+        // 如果impress.js不被浏览器看支持，它返回一个假的对象
+
+        // 这可能不是一个好的解决方案，但是这可以避免程序继续运行而出错
+
+        if (!impressSupported) {
+
+            return {
+
+                init: empty,
+
+                goto: empty,
+
+                prev: empty,
+
+                next: empty
+
+            };
+
+        }
+
+ 
+
+        rootId = rootId || "impress";
+
+ 
+
+        // 如果root已经初始化，返回该api
+
+        if (roots["impress-root-" + rootId]) {
+
+            return roots["impress-root-" + rootId];
+
+        }
+
+ 
+
+        // 所有演示步骤（step）的数据
+
+        var stepsData = {};
+
+ 
+
+        // 当前正在播放的step所在的html元素
+
+        var activeStep = null;
+
+ 
+
+        // 当前演示的状态数据 (position（位置）,
+
+        //rotation（旋转）和 scale（缩放）)
+
+        var currentState = null;
+
+ 
+
+        // step 元素数组
+
+        var steps = null;
+
+ 
+
+        // 配置项
+
+        var config = null;
+
+ 
+
+        // 浏览器缩放效果配置参数
+
+        var windowScale = null;
+
+ 
+
+        // 根对象
+
+        var root = byId(rootId);
+
+        var canvas = document.createElement("div");
+
+ 
+
+        var initialized = false;
+
+ 
+
+        // step 事件
+
+        //
+
+        // 在 impress.js中，有两个事件会被触发
+
+        //  当step在屏幕中被展现时将触发 `impress:stepenter`事件
+
+        //  (上一个step展现结束) ；
+
+        // `impress:stepleave` 当前step展现结束，下一个step即将开始时将触发
+
+        //`impress:stepleave`事件
+
+ 
+
+        // 上一个step的引用
+
+        var lastEntered = null;
+
+ 
+
+        // step刚被展现的时候，onStepEnter会被调用
+
+        // 前提是当前step必须和上一step不同
+
+        //
+
+        var onStepEnter = function (step) {
+
+            if (lastEntered !== step) {
+
+                triggerEvent(step, "impress:stepenter");
+
+                lastEntered = step;
+
+            }
+
+        };
+
+ 
+
+        // step结束的时候，onStepLeave会被调用
+
+        // 前提是当前step必须和上一step相同
+
+        //
+
+        var onStepLeave = function (step) {
+
+            if (lastEntered === step) {
+
+                triggerEvent(step, "impress:stepleave");
+
+                lastEntered = null;
+
+            }
+
+        };
+
+ 
+
+        // `initStep` 使用data属性中的数据初始化指定的step元素，
+
+        //并设置正确的样式
+
+        var initStep = function (el, idx) {
+
+            var data = el.dataset,
+
+                step = {
+
+                    translate: {
+
+                        x: toNumber(data.x),
+
+                        y: toNumber(data.y),
+
+                        z: toNumber(data.z)
+
+                    },
+
+                    rotate: {
+
+                        x: toNumber(data.rotateX),
+
+                        y: toNumber(data.rotateY),
+
+                        z: toNumber(data.rotateZ || data.rotate)
+
+                    },
+
+                    scale: toNumber(data.scale, 1),
+
+                    el: el
+
+                };
+
+ 
+
+            if (!el.id) {
+
+                el.id = "step-" + (idx + 1);
+
+            }
+
+ 
+
+            stepsData["impress-" + el.id] = step;
+
+ 
+
+            css(el, {
+
+                position: "absolute",
+
+                transform: "translate(-50%,-50%)" +
+
+                           translate(step.translate) +
+
+                           rotate(step.rotate) +
+
+                           scale(step.scale),
+
+                transformStyle: "preserve-3d"
+
+            });
+
+        };
+
+ 
+
+        // `init` API：初始化并运行当前演示文档.
+
+        var init = function () {
+
+            if (initialized) { return; }
+
+ 
+
+            // 首先，为移动设备设置视角.
+
+            // 由于某些原因，ipad会卡死.
+
+            var meta = $("meta[name='viewport']") || document.createElement("meta");
+
+            meta.content = "width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no";
+
+            if (meta.parentNode !== document.head) {
+
+                meta.name = 'viewport';
+
+                document.head.appendChild(meta);
+
+            }
+
+ 
+
+            // 初始化配置对象
+
+            var rootData = root.dataset;
+
+            config = {
+
+                width: toNumber(rootData.width, defaults.width),
+
+                height: toNumber(rootData.height, defaults.height),
+
+                maxScale: toNumber(rootData.maxScale, defaults.maxScale),
+
+                minScale: toNumber(rootData.minScale, defaults.minScale),
+
+                perspective: toNumber(rootData.perspective, defaults.perspective),
+
+                transitionDuration: toNumber(rootData.transitionDuration, defaults.transitionDuration)
+
+            };
+
+ 
+
+            windowScale = computeWindowScale(config);
+
+ 
+
+            // 将 step元素封装到canvas对象中
+
+            arrayify(root.childNodes).forEach(function (el) {
+
+                canvas.appendChild(el);
+
+            });
+
+            root.appendChild(canvas);
+
+ 
+
+            // 初始化默认样式
+
+            document.documentElement.style.height = "100%";
+
+ 
+
+            css(body, {
+
+                height: "100%",
+
+                overflow: "hidden"
+
+            });
+
+ 
+
+            var rootStyles = {
+
+                position: "absolute",
+
+                transformOrigin: "top left",
+
+                transition: "all 0s ease-in-out",
+
+                transformStyle: "preserve-3d"
+
+            };
+
+ 
+
+            css(root, rootStyles);
+
+            css(root, {
+
+                top: "50%",
+
+                left: "50%",
+
+                transform: perspective(config.perspective / windowScale) + scale(windowScale)
+
+            });
+
+            css(canvas, rootStyles);
+
+ 
+
+            body.classList.remove("impress-disabled");
+
+            body.classList.add("impress-enabled");
+
+ 
+
+            // 获取并设置step
+
+            steps = $$(".step", root);
+
+            steps.forEach(initStep);
+
+ 
+
+            // 为canvas初始化默认属性值
+
+            currentState = {
+
+                translate: { x: 0, y: 0, z: 0 },
+
+                rotate: { x: 0, y: 0, z: 0 },
+
+                scale: 1
+
+            };
+
+ 
+
+            initialized = true;
+
+ 
+
+            triggerEvent(root, "impress:init", { api: roots["impress-root-" + rootId] });
+
+        };
+
+ 
+
+        // `getStep` 是一个辅助函数，根据参数返回指定的step.
+
+        // 如果参数是数字，返回‘step-n’对象,
+
+        // 如果参数是字符串，返回id和该字符串相同的step元素,
+
+        // 如果参数为DOM元素，返回该step对象（只要对象存在）.
+
+        var getStep = function (step) {
+
+            if (typeof step === "number") {
+
+                step = step < 0 ? steps[steps.length + step] : steps[step];
+
+            } elseif (typeof step === "string") {
+
+                step = byId(step);
+
+            }
+
+            return (step && step.id && stepsData["impress-" + step.id]) ? step : null;
+
+        };
+
+ 
+
+        // 为 `impress:stepenter` 事件设置timeout值
+
+        var stepEnterTimeout = null;
+
+ 
+
+        // `goto` API 函数，根据传入的‘el’，跳转至指定的step (索引值，id或者元素),
+
+        //  `duration` 可选，单位为秒.
+
+        var goto = function (el, duration) {
+
+ 
+
+            if (!initialized || !(el = getStep(el))) {
+
+                // presentation not initialized or given element is not a step
+
+                returnfalse;
+
+            }
+
+ 
+
+            // 有时候通过键盘操作来使第一个链接获得焦点是有必要的.
+
+            // 浏览器此时可能会滚动页面显示这个元素
+
+            // (甚至直接将body的overflow属性设置为hidden都不行) 这将影响我们的布局效果.
+
+            //
+
+            // 最简单的，在任何一个step显示的时候，我们都将页面滚动到顶端
+
+            //
+
+            // 如果你有更好的解决方案，请联系我，洗耳恭听！
+
+            window.scrollTo(0, 0);
+
+ 
+
+            var step = stepsData["impress-" + el.id];
+
+ 
+
+            if (activeStep) {
+
+                activeStep.classList.remove("active");
+
+                body.classList.remove("impress-on-" + activeStep.id);
+
+            }
+
+            el.classList.add("active");
+
+ 
+
+            body.classList.add("impress-on-" + el.id);
+
+ 
+
+            // 基于给定的step，计算其在canvas上的显示状态
+
+            var target = {
+
+                rotate: {
+
+                    x: -step.rotate.x,
+
+                    y: -step.rotate.y,
+
+                    z: -step.rotate.z
+
+                },
+
+                translate: {
+
+                    x: -step.translate.x,
+
+                    y: -step.translate.y,
+
+                    z: -step.translate.z
+
+                },
+
+                scale: 1 / step.scale
+
+            };
+
+ 
+
+            // 确定变换是否缩放（zooming in）（逐渐放大过程）.
+
+            //
+
+            // 下面的信息用于修改变换时的样式:
+
+            // 当元素逐渐放大的时候 - 首先进行平移和旋转
+
+            // 之后才进行缩放, 当逐步缩小（zooming out）时，
+
+            // 先进行向内缩放，然后做平移和旋转.
+
+            var zoomin = target.scale >= currentState.scale;
+
+ 
+
+            duration = toNumber(duration, config.transitionDuration);
+
+            var delay = (duration / 2);
+
+ 
+
+            // 如果相同的step被重复选中，强制计算窗口缩放值,
+
+            // 因为这有可能是窗口大小改变引起的
+
+            if (el === activeStep) {
+
+                windowScale = computeWindowScale(config);
+
+            }
+
+ 
+
+            var targetScale = target.scale * windowScale;
+
+ 
+
+            //触发当前step的离开（leave）事件 (只有不是重复选择的step才触发该事件)
+
+            if (activeStep && activeStep !== el) {
+
+                onStepLeave(activeStep);
+
+            }
+
+ 
+
+            // 现在我们修改 `root` 和 `canvas` 的变换属性，触发变换.
+
+            //
+
+            // 存在root和canvas这两个对象原因---
+
+            // 它们独立进行动画:
+
+            // `root`用于缩放而 `canvas` 用于平移和旋转.
+
+            // 二者开始变换的延时时间也不相同
+
+            // (为了变换过程在视觉效果上看起来自然、美观),
+
+            // 所以我们需要知道二者的行为是否都结束了.
+
+            css(root, {
+
+                // 为了保证在不同的缩放时使透视效果看起来是一样的
+
+                // 我们同时需要缩放透视（perspective）
+
+                transform: perspective(config.perspective / targetScale) + scale(targetScale),
+
+                transitionDuration: duration + "ms",
+
+                transitionDelay: (zoomin ? delay : 0) + "ms"
+
+            });
+
+ 
+
+            css(canvas, {
+
+                transform: rotate(target.rotate, true) + translate(target.translate),
+
+                transitionDuration: duration + "ms",
+
+                transitionDelay: (zoomin ? 0 : delay) + "ms"
+
+            });
+
+ 
+
+            // 最复杂的部分到了...
+
+            //
+
+            // 如果在缩放、平移、旋转属性上无任何变化, 就意味着没有延迟
+
+            //  - 因为在 `root` 或者`canvas`元素上没有任何变换.
+
+            // 我们需要在恰当的时刻触发 `impress:stepenter` 事件,
+
+            // 所以我们比较当前和目标值从而确定是否需要计算延迟.
+
+            //
+
+            // 我只懂这个‘if’听起来很可怕, 但是当你知道即将要发生什么，这一切都变得很简单，
+
+            // - 简单到只需要比较下面这些值.
+
+            if (currentState.scale === target.scale ||
+
+                (currentState.rotate.x === target.rotate.x && currentState.rotate.y === target.rotate.y &&
+
+                 currentState.rotate.z === target.rotate.z && currentState.translate.x === target.translate.x &&
+
+                 currentState.translate.y === target.translate.y && currentState.translate.z === target.translate.z)) {
+
+                delay = 0;
+
+            }
+
+ 
+
+            // 存储当前状态
+
+            currentState = target;
+
+            activeStep = el;
+
+ 
+
+            // 这是触发 `impress:stepenter` 事件的地方.
+
+            //我们简单的使用定时器去解决变换延迟问题.
+
+            //
+
+            // 我确实想用更优雅的方式去解决这个问题. 
+
+            //`transitionend` 事件看起来是最好的方式。
+
+            //  但是我是在两个独立的元素上应用变换，同时
+
+            //  `transitionend`事件在只要有一个值发生变化就会被触发 (change in the values)
+
+            // 这引发了一些bug，并且使代码变得复杂, 因为我必须对所有场景都单独考虑.
+
+            // 而且当根本没有变换发生的时候，仍然需要一个 `setTimeout`延迟回调函数， .
+
+            // 所以我决定选择写更简单的代码而不是使用看起来更酷的 `transitionend`事件.
+
+            //
+
+            // 如果你想学习一些有意思的内容，
+
+            //去看impress.js 的0.5.2版本: http://github.com/bartaz/impress.js/blob/0.5.2/js/impress.js
+
+            window.clearTimeout(stepEnterTimeout);
+
+            stepEnterTimeout = window.setTimeout(function () {
+
+                onStepEnter(activeStep);
+
+            }, duration + delay);
+
+ 
+
+            return el;
+
+        };
+
+ 
+
+        // `prev` API function goes to previous step (in document order)
+
+        var prev = function () {
+
+            var prev = steps.indexOf(activeStep) - 1;
+
+            prev = prev >= 0 ? steps[prev] : steps[steps.length - 1];
+
+ 
+
+            return goto(prev);
+
+        };
+
+ 
+
+        // `next` API 函数，跳转到下一个step (在文档中的顺序)
+
+        var next = function () {
+
+            var next = steps.indexOf(activeStep) + 1;
+
+            next = next < steps.length ? steps[next] : steps[0];
+
+ 
+
+            return goto(next);
+
+        };
+
+ 
+
+        // 为step元素添加一些有用的类.
+
+        //
+
+        // 所有未被展示的step都被添加 `future` 类.
+
+        // 当step被播放时， `future`类被移除， `present`类被添加
+
+        //step结束时， `present` 类被‘past’类替换
+
+        //
+
+        // 所以每一个step都具有下面三种状态:
+
+        // `future`, `present` and `past`.
+
+        //
+
+        // 这三种类可以通过css，配置step在不同状态下的呈现样式.
+
+        // 例如 `present`类可以被用于当某个step展现的时候
+
+        // 触发一些自定义动画
+
+        root.addEventListener("impress:init", function () {
+
+            // STEP 的类
+
+            steps.forEach(function (step) {
+
+                step.classList.add("future");
+
+            });
+
+ 
+
+            root.addEventListener("impress:stepenter", function (event) {
+
+                event.target.classList.remove("past");
+
+                event.target.classList.remove("future");
+
+                event.target.classList.add("present");
+
+            }, false);
+
+ 
+
+            root.addEventListener("impress:stepleave", function (event) {
+
+                event.target.classList.remove("present");
+
+                event.target.classList.add("past");
+
+            }, false);
+
+ 
+
+        }, false);
+
+ 
+
+        // 添加hash变化支持.
+
+        root.addEventListener("impress:init", function () {
+
+ 
+
+            // 被探测到的上一个hash
+
+            var lastHash = "";
+
+ 
+
+            // 使用`#/step-id` 替代 `#step-id`
+
+            //以阻止浏览器滚动到该id的元素
+
+ 
+
+            // 必须在动画结束之后设置hash,
+
+            // 因为在google浏览器会导致变换的动画延迟.
+
+            // BUG: http://code.google.com/p/chromium/issues/detail?id=62820
+
+            root.addEventListener("impress:stepenter", function (event) {
+
+                window.location.hash = lastHash = "#/" + event.target.id;
+
+            }, false);
+
+ 
+
+            window.addEventListener("hashchange", function () {
+
+                // 当step开始展现， location 中的hash已经被更新，
+
+                // (就是上面几行代码),
+
+                //所以hashchange事件被触发，这导致同一step元素会被再次调用 `goto`
+
+                //
+
+                // 为了避免这一情况，我们存储上次的hash值然后做比较
+
+                if (window.location.hash !== lastHash) {
+
+                    goto(getElementFromHash());
+
+                }
+
+            }, false);
+
+ 
+
+            //
+
+            // 通过url或者选择文档中的第一个step开始播放
+
+            goto(getElementFromHash() || steps[0], 0);
+
+        }, false);
+
+ 
+
+        body.classList.add("impress-disabled");
+
+ 
+
+        // 存储并返回root对象
+
+        return (roots["impress-root-" + rootId] = {
+
+            init: init,
+
+            goto: goto,
+
+            next: next,
+
+            prev: prev
+
+        });
+
+ 
+
+    };
+
+ 
+
+    // 浏览器是否支持impress.js的标记
+
+    impress.supported = impressSupported;
+
+ 
+
+})(document, window);
+
+ 
+
+// 导航事件
+
+ 
+
+// 如你所见，这一部分代码和impress.js核心代码相分离.
+
+// 这是因为这一部分代码仅仅需要impress.js提供的接口
+
+//
+
+//
+
+// 在将来，我考虑将这部分代码放到独立的文件中
+
+// 以插件的形式的存在.
+
+(function (document, window) {
+
+    'use strict';
+
+ 
+
+    // throttling function calls, by Remy Sharp
+
+    // http://remysharp.com/2010/07/21/throttling-function-calls/
+
+    var throttle = function (fn, delay) {
+
+        var timer = null;
+
+        returnfunction () {
+
+            var context = this, args = arguments;
+
+            clearTimeout(timer);
+
+            timer = setTimeout(function () {
+
+                fn.apply(context, args);
+
+            }, delay);
+
+        };
+
+    };
+
+ 
+
+    // 等待 impress.js 初始化完毕
+
+    document.addEventListener("impress:init", function (event) {
+
+        // 从eventdata中获取api接口.
+
+        // 所以你不必在意impress.js的root元素的id或者其他属性是什么。
+
+        // `impress:init` event data给你所有想要的数据去控制播放
+
+        // .
+
+        var api = event.detail.api;
+
+ 
+
+        // 键盘导航处理函数
+
+ 
+
+        // 当被支持的按键按下时，阻止默认按键.
+
+        document.addEventListener("keydown", function (event) {
+
+            if (event.keyCode === 9 || (event.keyCode >= 32 && event.keyCode <= 34) || (event.keyCode >= 37 && event.keyCode <= 40)) {
+
+                event.preventDefault();
+
+            }
+
+        }, false);
+
+ 
+
+        // 当按键弹起事，触发按键事件 (← 或者 →   )
+
+ 
+
+        // 支持的按键:
+
+        // [空格] - 跳到下一页
+
+        // [↑] [→] / [↓] [←] - 上，右，下，左,
+
+        // [下一页] / [下一页] - 通常被遥控器触发,
+
+        // [tab] -很有争议，理由就不讨论了
+
+        //   备忘录... 记得诡异的部分：
+
+        //   每一个step播放时，页面窗口都从（0,0）开始
+
+        // 
+
+        //   嗯,  [tab] 键在默认情况下导航至可定位焦点的元素,
+
+        //  所以频繁的点击此键，会破坏演示效果
+
+        //   我不想简单的禁用[tab], 所以我使用 [tab]
+
+        //   作为跳到下一个step的另一种方法... 当然, 为了保持一致性
+
+        //    我应该添加 [shift+tab] 作为回退操作...
+
+        document.addEventListener("keyup", function (event) {
+
+            if (event.keyCode === 9 || (event.keyCode >= 32 && event.keyCode <= 34) || (event.keyCode >= 37 && event.keyCode <= 40)) {
+
+                switch (event.keyCode) {
+
+                    case 33: // pg up
+
+                    case 37: // left
+
+                    case 38: // up
+
+                        api.prev();
+
+                        break;
+
+                    case 9:  // tab
+
+                    case 32: // space
+
+                    case 34: // pg down
+
+                    case 39: // right
+
+                    case 40: // down
+
+                        api.next();
+
+                        break;
+
+                }
+
+ 
+
+                event.preventDefault();
+
+            }
+
+        }, false);
+
+ 
+
+        // 处理在当前演示step中产生的单击事件
+
+        document.addEventListener("click", function (event) {
+
+            // 处理事件冒泡（ "bubbling"）
+
+            // 是否是超链接
+
+            var target = event.target;
+
+            while ((target.tagName !== "A") &&
+
+                    (target !== document.documentElement)) {
+
+                target = target.parentNode;
+
+            }
+
+ 
+
+            if (target.tagName === "A") {
+
+                var href = target.getAttribute("href");
+
+ 
+
+                //如果指向某一step，直接到该step
+
+                if (href && href[0] === '#') {
+
+                    target = document.getElementById(href.slice(1));
+
+                }
+
+            }
+
+ 
+
+            if (api.goto(target)) {
+
+                event.stopImmediatePropagation();
+
+                event.preventDefault();
+
+            }
+
+        }, false);
+
+ 
+
+        // 处理在stepi上的点击
+
+        document.addEventListener("click", function (event) {
+
+            var target = event.target;
+
+            //查找最近的没有被激活的step
+
+            while (!(target.classList.contains("step") && !target.classList.contains("active")) &&
+
+                    (target !== document.documentElement)) {
+
+                target = target.parentNode;
+
+            }
+
+ 
+
+            if (api.goto(target)) {
+
+                event.preventDefault();
+
+            }
+
+        }, false);
+
+ 
+
+        // 处理触摸屏上的轻敲屏幕左右边缘的事件
+
+        // 参考 @hakimel: https://github.com/hakimel/reveal.js
+
+        document.addEventListener("touchstart", function (event) {
+
+            if (event.touches.length === 1) {
+
+                var x = event.touches[0].clientX,
+
+                    width = window.innerWidth * 0.3,
+
+                    result = null;
+
+ 
+
+                if (x < width) {
+
+                    result = api.prev();
+
+                } elseif (x > window.innerWidth - width) {
+
+                    result = api.next();
+
+                }
+
+ 
+
+                if (result) {
+
+                    event.preventDefault();
+
+                }
+
+            }
+
+        }, false);
+
+ 
+
+        // 浏览器窗口改变时，重新展示当前step
+
+        window.addEventListener("resize", throttle(function () {
+
+            // 强制再次激活当前step
+
+            api.goto(document.querySelector(".step.active"), 500);
+
+        }, 250), false);
+
+ 
+
+    }, false);
+
+ 
+
+})(document, window);
+
+ 
+
+// 到此为止！
+
+//
+
+// 谢谢你把它全部读完.
+
+//即使你是直接滚到到此处，仍然感谢.
+
+//
+
+// 在编写impress.js时，我学到了很多。希望这些代码和注释能对你有所帮助。
+对了，感觉用纯手工的方式制作，确实还是很辛苦的，所以有好心人制作了GUI工具帮助你创建演示，我找到了Impressionist 和 Strut，个人试用下来，还是觉得Strut更好用，你也可以实际尝试一下。
