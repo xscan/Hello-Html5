@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sqlite</title>
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<body onload="init()">
+    <!-- 创建数据库对象、使用事务进行数据库操作 -->
+    <form id="DataTable">
+    类型：<input type="text" id="type" name="type"/>
+    题目：<input type="text" id="title" name="title" />
+    正确答案：<input type="text" id="answer" name="answer" />
+    <br>
+    选项1：<input type="text" id="item1" name="item1" />
+    选项2：<input type="text" id="item2" name="item2" />
+    选项3：<input type="text" id="item3" name="item3" />
+    选项4：<input type="text" id="item4" name="item4" />
+    <br>
+    答案解析：<input type="text" id="answerparsing" name="answerparsing" />
+    关键词索引：<input type="text" id="keywords" name="keywords" />
+    </form>
+
+    <input type="button" value="保存" onclick="addData()" />
+    <hr/>
+    <input type="button" onclick="showAllData()" value="显示全部">
+            <input type="button" onclick="deleteData()" value="清空全部">
+    <hr/>
+    <table id="datatableprint" border="1">
+
+    </table>
+    <p id="'msg"></p>
+
+</body>
+<script type="text/javascript">
+
+    var sqls={
+        'InitDatabase':'create table if not exists question_bank(time text,type TEXT,title TEXT,answer Text,item1 Text,item2 Text,item3 Text,item4 Text,answerparsing text,keywords text)',
+        'SelectAll':'select * from question_bank',
+        'testDatabase':'create table if not exists question_bank(type TEXT,title TEXT)'
+    }
+    var datatable = null;
+    var db = openDatabase('online','1.0','test db',1024*100);//数据库名 版本 数据库描述 大小
+
+    function init(){
+           db.transaction(function(tx){
+                tx.executeSql(sqls.InitDatabase,[],function(tx,rs){
+                    console.log('Database Init Success');
+                },
+                function (tx,err){
+                    alert(err.source +'===='+err.message);
+            });
+        });
+           showAllData()
+    }
+    //设置测试值
+    function setval(){
+        var arrkey=getKeySerializeArray();
+        var values=['0','创建目录命令','mkdir','touch','date','tar','mkdir','mkdir为建立目录','linx,目录']
+        var i=0;
+        $('input[type=text]').each(function(){
+            $(this).val(values[i++])
+        })
+    }
+    //
+    function addData(){
+        setval()
+        console.log(getValueSerializeArray())
+        insertData(getValueSerializeArray())
+        showAllData();
+        // console.log(getValueSerializeArray())
+    }
+    //获取表单的值
+    function getValueSerializeArray(){
+        var DateTable=$('#DataTable').serializeArray();
+        var formatData=new Array();
+        formatData.push(new Date().getTime())
+        for (var i = 0; i <DateTable.length ; i++) {
+            // console.log(DateTable[i].value)
+            formatData.push(DateTable[i].value)
+        }
+        // console.log(formatData)
+        return formatData;
+    }
+    //获取表单的key
+    function getKeySerializeArray(){
+        var DateTable=$('#DataTable').serializeArray();
+        var formatData=new Array();
+
+        // console.log(DateTable)
+        for (var i = 0; i <DateTable.length ; i++) {
+            // console.log(DateTable[i].name)
+            formatData.push(DateTable[i].name)
+        }
+        return formatData;
+    }
+
+    function selectData(){
+              db.transaction(function(tx){
+                    tx.executeSql(sqls.SelectAll,[],function(tx,result){
+                       // for(var i = 0 ;i<result.rows.length;i++){
+                       //      console.log(result.rows.item(i));
+                       //  }
+                    },
+                    function (tx,err){
+                        alert(err.source +'===='+err.message);
+                    })
+            })
+
+    }
+    function insertData(DataArray){
+                db.transaction(function(tx){
+
+                    // tx.executeSql(sqls.InitDatabase,[],function(tx,rs){
+                    //     alert('yes');
+                    // },
+                    // function (tx,err){
+                    //     alert(err.source +'===='+err.message);
+                    // });
+                    tx.executeSql('insert into question_bank values(?,?,?,?,?,?,?,?,?,?)',DataArray,function(tx,rs){
+                    // tx.executeSql('insert into TelData values(?,?)',[name,tel],function(tx,rs){
+                        alert('插入成功');
+                    },
+                    function (tx,err){
+                        alert(err.source +'===='+err.message);
+                    })
+            })
+    }
+
+    function deleteData(){
+           db.transaction(function(tx){
+                    tx.executeSql('delete from question_bank',[],function(tx,rs){
+                    // tx.executeSql('insert into TelData values(?,?)',[name,tel],function(tx,rs){
+                        alert('清空成功');
+                    },
+                    function (tx,err){
+                        alert(err.source +'===='+err.message);
+                    })
+            })
+    }
+
+    function initTitlePrint(){
+        var th=getKeySerializeArray();
+        var thhtml='<tr><th>time</th>'
+        for (var i = 0; i < th.length; i++) {
+            thhtml=thhtml+'<th>'+th[i]+'</th>'
+        }
+        thhtml=thhtml+"</tr>"
+        // var tr="<tr><th>1123123</th></tr>";
+        
+        $('#datatableprint').append(thhtml);
+    }
+
+
+    function initDataPrint(){
+    var titles=getKeySerializeArray()
+    var tabletrhtml=''
+          db.transaction(function(tx){
+                tx.executeSql(sqls.SelectAll,[],function(tx,result){
+                   for(var i = 0 ;i<result.rows.length;i++){
+                        var tmptd=''
+
+                            for( value in result.rows.item(i)){
+                                tmptd=tmptd+"<td>"+result.rows.item(i)[value]+"</td>"
+                                 // console.log(result.rows.item(i)[value])
+                            }
+                            tabletrhtml=tabletrhtml+"<tr>"+tmptd+"<td><button onclick=deleteDate('"+result.rows.item(i).time+"')>删除</button></td></tr>";
+                        // console.log(result.rows.item(0).title);
+                    }
+                     $('#datatableprint').append(tabletrhtml);
+                },
+                function (tx,err){
+                    alert(err.source +'===='+err.message);
+                })
+        })
+    }
+
+    function showAllData(){//显示所有数据
+         $('#datatableprint').html('');
+        initTitlePrint()
+        initDataPrint()
+    }
+
+    function  deleteDate(time){//删除所有数据
+        db.transaction(function(tx){
+            tx.executeSql('delete from question_bank where time=?',[time],function(tx,res){
+                // alert(res+':删除成功~');
+                console.log(res.rowsAffected)
+            },function (tx,err){
+                alert('删除失败'+err.message);
+            })
+        })
+        showAllData();
+    }
+</script>
+</html>
